@@ -81,6 +81,42 @@ import java.util.List;
                         --password=pass1
                         --output-file=snapshot.xml
                 """
+        ),
+        @Example(
+            title = "Apply a custom changelog to update schema",
+            full = true,
+            code = """
+                id: liquibase_update
+                namespace: company.team
+
+                tasks:
+                  - id: update
+                    type: io.kestra.plugin.liquibase.CLI
+                    taskRunner:
+                      type: io.kestra.plugin.scripts.runner.docker.Docker
+                      networkMode: dbnet
+                      user: root
+                    inputFiles:
+                      changelog.yaml: |
+                        databaseChangeLog:
+                          - changeSet:
+                              id: 1
+                              author: malay
+                              changes:
+                                - addColumn:
+                                    tableName: customers
+                                    columns:
+                                      - column:
+                                          name: email
+                                          type: varchar(100)
+                    commands:
+                      - >
+                        liquibase update
+                        --url="jdbc:postgresql://pg1:5432/demo1"
+                        --username=user1
+                        --password=pass1
+                        --changeLogFile=changelog.yaml
+                """
         )
     }
 )
