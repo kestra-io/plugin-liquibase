@@ -121,7 +121,7 @@ import java.util.List;
     }
 )
 public class CLI extends AbstractExecScript implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
-    private static final String DEFAULT_IMAGE = "liquibase/liquibase:latest";
+    private static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/liquibase:latest";
 
     @Schema(title = "Liquibase CLI commands to run.")
     @NotNull
