@@ -60,7 +60,7 @@ import java.util.stream.Stream;
     }
 )
 public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutput> {
-    private static final String DEFAULT_IMAGE = "liquibase/liquibase:latest";
+    private static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/liquibase";
 
     @Builder.Default
     protected Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
