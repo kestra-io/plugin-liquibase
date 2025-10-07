@@ -123,11 +123,11 @@ import java.util.List;
 public class CLI extends AbstractExecScript implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
     private static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/liquibase:latest";
 
-    @Schema(title = "Liquibase CLI commands to run.")
+    @Schema(title = "Liquibase CLI commands to run")
     @NotNull
     private Property<List<String>> commands;
 
-    @Schema(title = "The task runner to use.")
+    @Schema(title = "The task runner to use")
     @PluginProperty
     @Builder.Default
     @Valid
