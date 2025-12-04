@@ -1,8 +1,8 @@
 group: io.kestra.plugin.liquibase
 name: "liquibase"
 title: "Liquibase"
-description: "Interact with Liquibase to run schema diffs, updates, validations, and other database change management tasks."
-body: ""
+description: "Tasks that run Liquibase change management commands."
+body: "Provide database connection details and changelog files to run updates, diffs, rollbacks, validations, or status checks via Liquibase CLI options, returning output for deployment pipelines."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
