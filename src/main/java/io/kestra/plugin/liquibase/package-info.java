@@ -1,7 +1,10 @@
 @PluginSubGroup(
     title = "Liquibase",
     description = "Interact with Liquibase to run schema diffs, updates, validations, and other database change management tasks.",
-    categories = PluginSubGroup.PluginCategory.DATABASE
+    categories = PluginSubGroup.PluginCategory.DATABASE,
+    categories = {
+        PluginSubGroup.PluginCategory.DATA
+    }
 )
 package io.kestra.plugin.liquibase;
 
