@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: pass1
       POSTGRES_DB: demo1
     ports:
-      - "5432:5432"
+      - "15432:5432"
     networks:
       - dbnet
 
@@ -24,6 +24,6 @@ services:
       POSTGRES_PASSWORD: pass2
       POSTGRES_DB: demo2
     ports:
-      - "5433:5432"
+      - "15433:5432"
     networks:
       - dbnet
