@@ -27,7 +27,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run Liquibase CLI commands."
+    title = "Execute custom Liquibase CLI commands",
+    description = "Runs the provided Liquibase CLI lines verbatim using the configured task runner. Defaults to ghcr.io/kestra-io/liquibase:latest and forces root user when not specified; include full connection flags and output paths in `commands`."
 )
 @Plugin(
     examples = {
@@ -123,11 +124,11 @@ import java.util.List;
 public class CLI extends AbstractExecScript implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
     private static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/liquibase:latest";
 
-    @Schema(title = "Liquibase CLI commands to run")
+    @Schema(title = "CLI command list", description = "Commands passed directly to Liquibase; provide complete flags such as `--url`, credentials, and output targets")
     @NotNull
     private Property<List<String>> commands;
 
-    @Schema(title = "The task runner to use")
+    @Schema(title = "Task runner", description = "Execution backend; defaults to Docker runner and sets user to root when unspecified for file write permissions")
     @PluginProperty
     @Builder.Default
     @Valid

@@ -28,7 +28,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run Liquibase diff to compare DB schemas."
+    title = "Compare databases with Liquibase diff",
+    description = "Generates a schema diff between a target and reference database. Runs `diff-changelog` and writes a changelog when `changelogFile` is set; otherwise runs `diff` only. Uses the ghcr.io/kestra-io/liquibase image by default; set `commands` to override the auto-built CLI call."
 )
 @Plugin(
     examples = {
@@ -65,31 +66,32 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
     @Builder.Default
     protected Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
-    @Schema(title = "Target DB JDBC URL")
+    @Schema(title = "Target JDBC URL", description = "Database instance to compare against the reference")
     @NotNull
     private Property<String> url;
 
-    @Schema(title = "Target DB username")
+    @Schema(title = "Target username", description = "Authentication for the target database; empty means driver default")
     private Property<String> username;
 
-    @Schema(title = "Target DB password")
+    @Schema(title = "Target password", description = "Password for the target user; stored as plain value in the task run")
     private Property<String> password;
 
-    @Schema(title = "Reference DB JDBC URL")
+    @Schema(title = "Reference JDBC URL", description = "Database used as the baseline for the diff")
     @NotNull
     private Property<String> referenceUrl;
 
-    @Schema(title = "Reference DB username")
+    @Schema(title = "Reference username", description = "Authentication for the reference database; empty means driver default")
     private Property<String> referenceUsername;
 
-    @Schema(title = "Reference DB password")
+    @Schema(title = "Reference password", description = "Password for the reference user; stored as plain value in the task run")
     private Property<String> referencePassword;
 
-    @Schema(title = "Output changelog file (XML/SQL/JSON)")
+    @Schema(title = "Output changelog file (XML/SQL/JSON)", description = "When set, writes the diff to this file via `diff-changelog`; file type is inferred from extension")
     private Property<String> changelogFile;
 
     @Schema(
-        title = "Optional raw commands to run. If provided, overrides automatic diff command construction."
+        title = "Custom Liquibase commands",
+        description = "Run these commands verbatim instead of the auto-generated diff command"
     )
     @PluginProperty
     private Property<List<String>> commands;
