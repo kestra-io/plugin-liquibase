@@ -1,6 +1,6 @@
 @PluginSubGroup(
     title = "Liquibase",
-    description = "Interact with Liquibase to run schema diffs, updates, validations, and other database change management tasks.",categories = {
+    description = "Interact with Liquibase to run schema diffs, updates, validations, and other database change management tasks.", categories = {
         PluginSubGroup.PluginCategory.DATA
     }
 )
