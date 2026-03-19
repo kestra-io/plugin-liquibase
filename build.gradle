@@ -92,6 +92,9 @@ dependencies {
     testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "runner-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
+    testImplementation group: "io.kestra", name: "scheduler", version: kestraVersion
+    testImplementation group: "io.kestra", name: "worker", version: kestraVersion
+    testImplementation "io.kestra.plugin:plugin-docker:1.2.3"
 
     // test
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
