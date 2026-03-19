@@ -1,0 +1,240 @@
+id: all_liquibase
+namespace: sanitychecks.plugin-liquibase
+
+variables:
+  primary_user: user1
+  primary_password: pass1
+  primary_database: demo1
+  reference_user: user2
+  reference_password: pass2
+  reference_database: demo2
+
+tasks:
+  - id: init
+    type: io.kestra.plugin.core.output.OutputValues
+    values:
+      primary_port: "{{ randomPort() }}"
+      reference_port: "{{ randomPort() }}"
+
+  - id: docker_start_primary
+    type: io.kestra.plugin.docker.Run
+    containerImage: postgres:15
+    env:
+      POSTGRES_USER: "{{ vars.primary_user }}"
+      POSTGRES_PASSWORD: "{{ vars.primary_password }}"
+      POSTGRES_DB: "{{ vars.primary_database }}"
+    portBindings:
+      - "{{ outputs.init.values.primary_port }}:5432"
+    wait: false
+
+  - id: docker_start_reference
+    type: io.kestra.plugin.docker.Run
+    containerImage: postgres:15
+    env:
+      POSTGRES_USER: "{{ vars.reference_user }}"
+      POSTGRES_PASSWORD: "{{ vars.reference_password }}"
+      POSTGRES_DB: "{{ vars.reference_database }}"
+    portBindings:
+      - "{{ outputs.init.values.reference_port }}:5432"
+    wait: false
+
+  - id: wait_postgres
+    type: io.kestra.plugin.core.flow.Sleep
+    duration: PT20S
+
+  - id: liquibase_checks
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    inputFiles:
+      base-changelog.yaml: |
+        databaseChangeLog:
+          - changeSet:
+              id: 1
+              author: sanity
+              changes:
+                - createTable:
+                    tableName: customers
+                    columns:
+                      - column:
+                          name: id
+                          type: int
+                          autoIncrement: true
+                          constraints:
+                            primaryKey: true
+                            nullable: false
+                      - column:
+                          name: full_name
+                          type: varchar(255)
+                          constraints:
+                            nullable: false
+      target-changelog.yaml: |
+        databaseChangeLog:
+          - include:
+              file: base-changelog.yaml
+          - changeSet:
+              id: 2
+              author: sanity
+              changes:
+                - addColumn:
+                    tableName: customers
+                    columns:
+                      - column:
+                          name: email
+                          type: varchar(255)
+          - changeSet:
+              id: 3
+              author: sanity
+              changes:
+                - createTable:
+                    tableName: purchase_orders
+                    columns:
+                      - column:
+                          name: id
+                          type: int
+                          autoIncrement: true
+                          constraints:
+                            primaryKey: true
+                            nullable: false
+                      - column:
+                          name: customer_id
+                          type: int
+                          constraints:
+                            nullable: false
+    tasks:
+      - id: validate_target
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        commands:
+          - >
+            liquibase validate
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.primary_port }}/{{ vars.primary_database }}"
+            --username="{{ vars.primary_user }}"
+            --password="{{ vars.primary_password }}"
+            --changeLogFile=target-changelog.yaml
+
+      - id: update_primary
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        commands:
+          - >
+            liquibase update
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.primary_port }}/{{ vars.primary_database }}"
+            --username="{{ vars.primary_user }}"
+            --password="{{ vars.primary_password }}"
+            --changeLogFile=base-changelog.yaml
+
+      - id: status_primary
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        outputFiles:
+          - status.txt
+        commands:
+          - >
+            liquibase status --verbose
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.primary_port }}/{{ vars.primary_database }}"
+            --username="{{ vars.primary_user }}"
+            --password="{{ vars.primary_password }}"
+            --changeLogFile=target-changelog.yaml > status.txt
+
+      - id: update_sql
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        outputFiles:
+          - update.sql
+        commands:
+          - >
+            liquibase update-sql
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.primary_port }}/{{ vars.primary_database }}"
+            --username="{{ vars.primary_user }}"
+            --password="{{ vars.primary_password }}"
+            --changeLogFile=target-changelog.yaml > update.sql
+
+      - id: update_reference
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        commands:
+          - >
+            liquibase update
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.reference_port }}/{{ vars.reference_database }}"
+            --username="{{ vars.reference_user }}"
+            --password="{{ vars.reference_password }}"
+            --changeLogFile=target-changelog.yaml
+
+      - id: snapshot_reference
+        type: io.kestra.plugin.liquibase.CLI
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        outputFiles:
+          - snapshot.json
+        commands:
+          - >
+            liquibase snapshot
+            --snapshot-format=json
+            --url="jdbc:postgresql://localhost:{{ outputs.init.values.reference_port }}/{{ vars.reference_database }}"
+            --username="{{ vars.reference_user }}"
+            --password="{{ vars.reference_password }}"
+            > snapshot.json
+
+      - id: diff_changelog
+        type: io.kestra.plugin.liquibase.Diff
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+          networkMode: host
+          user: root
+        url: "jdbc:postgresql://localhost:{{ outputs.init.values.primary_port }}/{{ vars.primary_database }}"
+        username: "{{ vars.primary_user }}"
+        password: "{{ vars.primary_password }}"
+        referenceUrl: "jdbc:postgresql://localhost:{{ outputs.init.values.reference_port }}/{{ vars.reference_database }}"
+        referenceUsername: "{{ vars.reference_user }}"
+        referencePassword: "{{ vars.reference_password }}"
+        changelogFile: diff.xml
+        outputFiles:
+          - diff.xml
+
+      - id: assert_outputs
+        type: io.kestra.plugin.core.execution.Assert
+        conditions:
+          - "{{ outputs.validate_target.exitCode == 0 }}"
+          - "{{ outputs.update_primary.exitCode == 0 }}"
+          - "{{ outputs.status_primary.exitCode == 0 }}"
+          - "{{ outputs.status_primary.outputFiles['status.txt'] is not null }}"
+          - "{{ outputs.update_sql.exitCode == 0 }}"
+          - "{{ read(outputs.update_sql.outputFiles['update.sql']) contains 'ALTER TABLE public.customers ADD email VARCHAR(255)' }}"
+          - "{{ read(outputs.update_sql.outputFiles['update.sql']) contains 'CREATE TABLE public.purchase_orders' }}"
+          - "{{ outputs.update_reference.exitCode == 0 }}"
+          - "{{ outputs.snapshot_reference.exitCode == 0 }}"
+          - "{{ read(outputs.snapshot_reference.outputFiles['snapshot.json']) contains 'purchase_orders' }}"
+          - "{{ read(outputs.snapshot_reference.outputFiles['snapshot.json']) contains 'email' }}"
+          - "{{ outputs.diff_changelog.exitCode == 0 }}"
+          - "{{ read(outputs.diff_changelog.outputFiles['diff.xml']) contains 'purchase_orders' }}"
+          - "{{ read(outputs.diff_changelog.outputFiles['diff.xml']) contains 'email' }}"
+
+finally:
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+  - id: docker_stop_primary
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.docker_start_primary.taskRunner.containerId }}"
+    kill: true
+
+  - id: docker_stop_reference
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.docker_start_reference.taskRunner.containerId }}"
+    kill: true
