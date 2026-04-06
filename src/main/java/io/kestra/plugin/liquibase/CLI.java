@@ -127,15 +127,17 @@ public class CLI extends AbstractExecScript implements RunnableTask<ScriptOutput
 
     @Schema(title = "CLI command list", description = "Commands passed directly to Liquibase; provide complete flags such as `--url`, credentials, and output targets")
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> commands;
 
     @Schema(title = "Task runner", description = "Execution backend; defaults to Docker runner and sets user to root when unspecified for file write permissions")
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     @Valid
     protected TaskRunner<?> taskRunner = Docker.instance();
 
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
     @Override
