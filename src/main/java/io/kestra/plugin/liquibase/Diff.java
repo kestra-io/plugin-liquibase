@@ -65,39 +65,47 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
     private static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/liquibase";
 
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
     @Schema(title = "Target JDBC URL", description = "Database instance to compare against the reference")
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> url;
 
     @Schema(title = "Target username", description = "Authentication for the target database; empty means driver default")
+    @PluginProperty(group = "connection")
     private Property<String> username;
 
     @Schema(title = "Target password", description = "Password for the target user; stored as plain value in the task run")
+    @PluginProperty(group = "connection")
     private Property<String> password;
 
     @Schema(title = "Reference JDBC URL", description = "Database used as the baseline for the diff")
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> referenceUrl;
 
     @Schema(title = "Reference username", description = "Authentication for the reference database; empty means driver default")
+    @PluginProperty(group = "connection")
     private Property<String> referenceUsername;
 
     @Schema(title = "Reference password", description = "Password for the reference user; stored as plain value in the task run")
+    @PluginProperty(group = "connection")
     private Property<String> referencePassword;
 
     @Schema(title = "Output changelog file (XML/SQL/JSON)", description = "When set, writes the diff to this file via `diff-changelog`; file type is inferred from extension")
+    @PluginProperty(group = "source")
     private Property<String> changelogFile;
 
     @Schema(
         title = "Custom Liquibase commands",
         description = "Run these commands verbatim instead of the auto-generated diff command"
     )
-    @PluginProperty
+    @PluginProperty(group = "main")
     private Property<List<String>> commands;
 
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     @Valid
     protected TaskRunner<?> taskRunner = Docker.instance();
