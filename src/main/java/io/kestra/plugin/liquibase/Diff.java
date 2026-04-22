@@ -74,11 +74,11 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
     private Property<String> url;
 
     @Schema(title = "Target username", description = "Authentication for the target database; empty means driver default")
-    @PluginProperty(group = "connection")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> username;
 
     @Schema(title = "Target password", description = "Password for the target user; stored as plain value in the task run")
-    @PluginProperty(group = "connection")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> password;
 
     @Schema(title = "Reference JDBC URL", description = "Database used as the baseline for the diff")
@@ -87,11 +87,11 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
     private Property<String> referenceUrl;
 
     @Schema(title = "Reference username", description = "Authentication for the reference database; empty means driver default")
-    @PluginProperty(group = "connection")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> referenceUsername;
 
     @Schema(title = "Reference password", description = "Password for the reference user; stored as plain value in the task run")
-    @PluginProperty(group = "connection")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> referencePassword;
 
     @Schema(title = "Output changelog file (XML/SQL/JSON)", description = "When set, writes the diff to this file via `diff-changelog`; file type is inferred from extension")
