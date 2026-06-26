@@ -46,10 +46,10 @@ import lombok.experimental.SuperBuilder;
                     type: io.kestra.plugin.liquibase.Diff
                     url: jdbc:postgresql://pg1:5432/demo1
                     username: user1
-                    password: pass1
+                    password: "{{ secret('DB_PASSWORD') }}"
                     referenceUrl: jdbc:postgresql://pg2:5432/demo2
                     referenceUsername: user2
-                    referencePassword: pass2
+                    referencePassword: "{{ secret('REFERENCE_DB_PASSWORD') }}"
                     changelogFile: diff.xml
                     taskRunner:
                       type: io.kestra.plugin.scripts.runner.docker.Docker
@@ -105,6 +105,7 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
     @PluginProperty(group = "main")
     private Property<List<String>> commands;
 
+    @Schema(title = "The task runner to use for executing the Liquibase CLI")
     @PluginProperty(group = "execution")
     @Builder.Default
     @Valid
