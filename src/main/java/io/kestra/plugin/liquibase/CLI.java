@@ -52,10 +52,10 @@ import lombok.experimental.SuperBuilder;
                         liquibase diff
                         --url="jdbc:postgresql://pg1:5432/demo1"
                         --username=user1
-                        --password=pass1
+                        --password={{ secret('DB_PASSWORD') }}
                         --reference-url="jdbc:postgresql://pg2:5432/demo2"
                         --reference-username=user2
-                        --reference-password=pass2
+                        --reference-password={{ secret('REFERENCE_DB_PASSWORD') }}
                 """
         ),
         @Example(
@@ -80,7 +80,7 @@ import lombok.experimental.SuperBuilder;
                         liquibase snapshot
                         --url=jdbc:postgresql://pg1:5432/demo1
                         --username=user1
-                        --password=pass1
+                        --password={{ secret('DB_PASSWORD') }}
                         --output-file=snapshot.xml
                 """
         ),
@@ -116,7 +116,7 @@ import lombok.experimental.SuperBuilder;
                         liquibase update
                         --url="jdbc:postgresql://pg1:5432/demo1"
                         --username=user1
-                        --password=pass1
+                        --password={{ secret('DB_PASSWORD') }}
                         --changeLogFile=changelog.yaml
                 """
         )
