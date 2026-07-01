@@ -1,6 +1,8 @@
 package io.kestra.plugin.liquibase;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -75,10 +77,12 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
 
     @Schema(title = "Target username", description = "Authentication for the target database; empty means driver default")
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     private Property<String> username;
 
     @Schema(title = "Target password", description = "Password for the target user; stored as plain value in the task run")
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     private Property<String> password;
 
     @Schema(title = "Reference JDBC URL", description = "Database used as the baseline for the diff")
@@ -88,10 +92,12 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
 
     @Schema(title = "Reference username", description = "Authentication for the reference database; empty means driver default")
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     private Property<String> referenceUsername;
 
     @Schema(title = "Reference password", description = "Password for the reference user; stored as plain value in the task run")
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     private Property<String> referencePassword;
 
     @Schema(title = "Output changelog file (XML/SQL/JSON)", description = "When set, writes the diff to this file via `diff-changelog`; file type is inferred from extension")
@@ -116,27 +122,35 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
         TargetOS os = runContext.render(this.targetOS).as(TargetOS.class).orElse(null);
         boolean hasChangelog = runContext.render(changelogFile).as(String.class).isPresent();
 
-        String command = Stream.concat(
+        // Credentials are passed via environment variables (consumed natively by the
+        // Liquibase CLI as LIQUIBASE_COMMAND_* vars) rather than as CLI flags, so they
+        // never appear in the assembled command string, process arguments (/proc), or logs.
+        Map<String, String> secretEnv = new LinkedHashMap<>();
+        secretEnv.put("LIQUIBASE_COMMAND_PASSWORD", runContext.render(password).as(String.class).orElse(""));
+        secretEnv.put("LIQUIBASE_COMMAND_REFERENCE_PASSWORD", runContext.render(referencePassword).as(String.class).orElse(""));
+
+        List<String> commandParts = Stream.concat(
             Stream.of("liquibase", hasChangelog ? "diff-changelog" : "diff"),
             Stream.of(
                 "--url=" + runContext.render(url).as(String.class).orElseThrow(),
                 "--username=" + runContext.render(username).as(String.class).orElse(""),
-                "--password=" + runContext.render(password).as(String.class).orElse(""),
                 "--reference-url=" + runContext.render(referenceUrl).as(String.class).orElseThrow(),
-                "--reference-username=" + runContext.render(referenceUsername).as(String.class).orElse(""),
-                "--reference-password=" + runContext.render(referencePassword).as(String.class).orElse("")
+                "--reference-username=" + runContext.render(referenceUsername).as(String.class).orElse("")
             )
-        ).reduce((a, b) -> a + " " + b).orElseThrow();
+        ).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
 
         if (hasChangelog) {
             String file = runContext.render(changelogFile).as(String.class).orElseThrow();
-            command += " --changelog-file=" + file;
+            commandParts.add("--changelog-file=" + file);
         }
+
+        String command = String.join(" ", commandParts);
 
         return this.commands(runContext)
             .withTaskRunner(this.taskRunner)
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElse(DEFAULT_IMAGE))
             .withInterpreter(this.interpreter)
+            .addEnv(secretEnv)
             .withCommands(Property.ofValue(List.of(command)))
             .withTargetOS(os)
             .run();
