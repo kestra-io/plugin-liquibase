@@ -1,5 +1,6 @@
 package io.kestra.plugin.liquibase;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -15,6 +16,7 @@ import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.core.runner.Process;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.runner.docker.Docker;
 
@@ -59,5 +61,43 @@ public class DiffTest {
         TestsUtils.awaitLog(logs, log -> log.getMessage() != null && log.getMessage().contains("public.customers.email"));
         receive.blockLast();
         assertThat(logs.stream().anyMatch(l -> l.getMessage() != null && l.getMessage().contains("public.customers.email")), is(true));
+    }
+
+    @Test
+    void customCommandsOverrideDiff() throws Exception {
+        assertCustomCommandsRun(null);
+    }
+
+    @Test
+    void customCommandsOverrideDiffChangelog() throws Exception {
+        assertCustomCommandsRun(Property.ofValue("diff.xml"));
+    }
+
+    private void assertCustomCommandsRun(Property<String> changelogFile) throws Exception {
+        Diff task = Diff.builder()
+            .id("custom_commands")
+            .type(Diff.class.getName())
+            .taskRunner(Process.instance())
+            .url(Property.ofValue("jdbc:postgresql://unused:5432/target"))
+            .referenceUrl(Property.ofValue("jdbc:postgresql://unused:5432/reference"))
+            .changelogFile(changelogFile)
+            .commands(
+                Property.ofValue(
+                    List.of(
+                        "printf 'first-command\\n' > custom.txt",
+                        "printf 'second-command\\n' >> custom.txt"
+                    )
+                )
+            )
+            .outputFiles(Property.ofValue(List.of("custom.txt")))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        ScriptOutput output = task.run(runContext);
+
+        assertThat(output.getExitCode(), is(0));
+        try (var file = runContext.storage().getFile(output.getOutputFiles().get("custom.txt"))) {
+            assertThat(new String(file.readAllBytes(), StandardCharsets.UTF_8), is("first-command\nsecond-command\n"));
+        }
     }
 }
