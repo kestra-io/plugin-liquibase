@@ -151,7 +151,7 @@ public class Diff extends AbstractExecScript implements RunnableTask<ScriptOutpu
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElse(DEFAULT_IMAGE))
             .withInterpreter(this.interpreter)
             .addEnv(secretEnv)
-            .withCommands(Property.ofValue(List.of(command)))
+            .withCommands(this.commands != null ? this.commands : Property.ofValue(List.of(command)))
             .withTargetOS(os)
             .run();
     }
