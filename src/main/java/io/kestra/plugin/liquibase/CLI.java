@@ -146,6 +146,8 @@ public class CLI extends AbstractExecScript implements RunnableTask<ScriptOutput
 
         return this.commands(runContext)
             .withTaskRunner(this.taskRunner)
+            .withBeforeCommands(this.beforeCommands)
+            .withBeforeCommandsWithOptions(true)
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElse(DEFAULT_IMAGE))
             .withInterpreter(this.interpreter)
             .withTargetOS(os)
